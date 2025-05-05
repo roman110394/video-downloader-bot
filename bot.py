@@ -4,7 +4,7 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, ContextTypes, filters
 import yt_dlp
 
-BOT_TOKEN = os.environ.get("7355680088:AAHm0wQi71nLC02y7V9C6I0fzCY8JIvPqWA")
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
 YOUTUBE_REGEX = r'(https?://(?:www\.)?youtube\.com/watch\?v=[\w-]+|https?://youtu\.be/[\w-]+)'
 
