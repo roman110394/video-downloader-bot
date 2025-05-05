@@ -1,12 +1,16 @@
 import os
-import re
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, ContextTypes, filters
 import yt_dlp
+import logging
+from flask import Flask, request
 
-# Получаем токен из переменных окружения
+app = Flask(__name__)
+
+# Токен бота, полученный от BotFather
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
+# Регулярное выражение для поиска ссылок на YouTube
 YOUTUBE_REGEX = r'(https?://(?:www\.)?youtube\.com/watch\?v=[\w-]+|https?://youtu\.be/[\w-]+)'
 
 # Функция для скачивания и отправки видео
@@ -34,10 +38,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if match:
         await download_and_send(match.group(0), update, context)
 
-# Создаём приложение и подключаем обработчик
-app = ApplicationBuilder().token(BOT_TOKEN).build()
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+# Flask route для webhook
+@app.route(f'/{BOT_TOKEN}', methods=['POST'])
+def webhook():
+    json_str = request.get_data(as_text=True)
+    update = Update.de_json(json_str, app.bot)
+    app.update_queue.put(update)
+    return 'OK', 200
 
-# Запускаем бота без использования порта, так как он не требуется
+# Настройка webhook
+async def set_webhook():
+    url = f"https://video-downloader-bot-zh4x.onrender.com/{BOT_TOKEN}"  # Используем свой URL
+    await app.bot.set_webhook(url)
+
 if __name__ == "__main__":
-    app.run_polling()
+    app.run(debug=True)
