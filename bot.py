@@ -12,6 +12,29 @@ bot = telegram.Bot(token=os.environ.get("TELEGRAM_TOKEN"))
 # Регулярное выражение для поиска ссылок на YouTube
 YOUTUBE_REGEX = r'(https?://(?:www\.)?youtube\.com/watch\?v=[\w-]+|https?://youtu\.be/[\w-]+)'
 
+# Основной маршрут для GET запросов
+@app.route('/')
+def home():
+    return "Video Downloader Bot is up and running!"
+
+# Обработка входящих обновлений через вебхук
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    # Получаем данные из запроса
+    update = telegram.Update.de_json(request.get_json(force=True), bot)
+
+    # Извлекаем информацию из сообщения
+    text = update.message.text or ""
+    chat_id = update.message.chat_id
+
+    # Если в сообщении есть ссылка на YouTube
+    match = re.search(YOUTUBE_REGEX, text)
+    if match:
+        url = match.group(0)
+        download_and_send(url, chat_id)
+    
+    return 'OK'
+
 async def download_and_send(url: str, chat_id: int):
     try:
         ydl_opts = {
@@ -33,24 +56,7 @@ async def download_and_send(url: str, chat_id: int):
     except Exception as e:
         bot.send_message(chat_id=chat_id, text=f"Ошибка при загрузке: {e}")
 
-# Обработка входящих обновлений через вебхук
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    # Получаем данные из запроса
-    update = telegram.Update.de_json(request.get_json(force=True), bot)
-
-    # Извлекаем информацию из сообщения
-    text = update.message.text or ""
-    chat_id = update.message.chat_id
-
-    # Если в сообщении есть ссылка на YouTube
-    match = re.search(YOUTUBE_REGEX, text)
-    if match:
-        url = match.group(0)
-        download_and_send(url, chat_id)
-    
-    return 'OK'
-
 if __name__ == '__main__':
-    # Запускаем сервер на доступном интерфейсе и порту, который предоставляет Render
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    # Запуск Flask-сервера, слушая на всех интерфейсах и порту, указанном в переменной окружения PORT
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
