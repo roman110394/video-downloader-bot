@@ -22,13 +22,10 @@ except InvalidToken as e:
     logger.error(f"Invalid BOT_TOKEN: {e}")
     raise
 
-try:
-    application = Application.builder().token(TOKEN).build()
-except Exception as e:
-    logger.error(f"Failed to initialize Application: {e}")
-    raise
-
 app = Flask(__name__)
+
+# Создание и инициализация Application
+application = Application.builder().token(TOKEN).build()
 
 # Обработчик команды /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -59,19 +56,23 @@ async def webhook():
         logger.error(f"Error in webhook: {e}", exc_info=True)
         return 'ok', 500
 
-# Установка вебхука
-async def set_webhook():
-    webhook_url = "https://video-downloader-bot-zh4x.onrender.com/webhook"
+# Установка вебхука и инициализация приложения
+async def initialize_and_set_webhook():
     try:
+        await application.initialize()
+        logger.info("Application initialized")
+        webhook_url = "https://video-downloader-bot-zh4x.onrender.com/webhook"
         success = await bot.set_webhook(webhook_url)
         logger.info(f"Webhook set: {success}")
     except TelegramError as e:
         logger.error(f"Failed to set webhook: {e}")
+    except Exception as e:
+        logger.error(f"Failed to initialize application: {e}")
 
 # Запуск приложения
 if __name__ == "__main__":
     logger.info("Starting application")
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(set_webhook())
+    loop.run_until_complete(initialize_and_set_webhook())
     port = int(os.environ.get("PORT", 8443))
     app.run(host="0.0.0.0", port=port)
