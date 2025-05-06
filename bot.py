@@ -21,13 +21,18 @@ application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_m
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    update = Update.de_json(request.get_json(force=True), bot)
+    data = request.get_json(force=True)
+    print("Got update:", data)
+    update = Update.de_json(data, bot)
     application.update_queue.put_nowait(update)
     return 'ok'
 
+
 def set_webhook():
     url = "https://video-downloader-bot-zh4x.onrender.com/webhook"
-    asyncio.run(bot.set_webhook(url))
+    result = asyncio.run(bot.set_webhook(url))
+    print("Webhook set:", result)
+
 
 if __name__ == "__main__":
     set_webhook()
